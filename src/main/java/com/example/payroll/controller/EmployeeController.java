@@ -18,17 +18,13 @@ public class EmployeeController {
 
     private final EmployeeRepository repository;
 
-    private final EmployeeModelAssembler assembler;
-
-    public EmployeeController(EmployeeRepository repository, EmployeeModelAssembler assembler) {
+    public EmployeeController(EmployeeRepository repository) {
         this.repository = repository;
-        this.assembler = assembler;
     }
 
     @GetMapping
-    CollectionModel<EntityModel<Employee>> all() {
-        return CollectionModel.of(assembler.toCollectionModel(repository.findAll()),
-                linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+    List<Employee> all() {
+        return repository.findAll();
     }
 
     @PostMapping
@@ -37,12 +33,10 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
-    EntityModel<Employee> one(@PathVariable Long id) {
-        var employee = repository.findById(id).orElseThrow(
+    Employee one(@PathVariable Long id) {
+        return repository.findById(id).orElseThrow(
                 () -> new EmployeeNotFoundException(id)
         );
-
-        return assembler.toModel(employee);
     }
 
     @PutMapping("/{id}")
