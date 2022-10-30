@@ -18,8 +18,8 @@ public class LoadDatabase {
     @Bean
     CommandLineRunner initDatabase(EmployeeRepository repository) {
        return args -> List.of(
-               new Employee("Bilbo Baggins", "burglar"),
-               new Employee("Frodo Baggins", "thief"))
+               new Employee("Bilbo", "Baggins", "burglar"),
+               new Employee("Frodo", "Baggins", "thief"))
                .forEach(employee -> LOGGER.info("Preloading {}", repository.save(employee)));
     }
 }
