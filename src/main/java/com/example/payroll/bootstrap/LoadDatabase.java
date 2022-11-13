@@ -19,7 +19,8 @@ public class LoadDatabase {
     private static final Logger log = LoggerFactory.getLogger(LoadDatabase.class);
 
     @Bean
-    CommandLineRunner initDatabase(EmployeeRepository employeeRepository, OrderRepository orderRepository) {
+    CommandLineRunner initDatabase(EmployeeRepository employeeRepository,
+                                   OrderRepository.OrderIdRepository orderRepository) {
        return args -> {
            List.of(
                    new Employee("Bilbo", "Baggins", "burglar"),

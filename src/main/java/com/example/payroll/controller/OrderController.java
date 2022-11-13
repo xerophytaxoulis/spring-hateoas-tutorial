@@ -2,8 +2,11 @@ package com.example.payroll.controller;
 
 import com.example.payroll.exception.OrderNotFoundException;
 import com.example.payroll.model.Order;
+import com.example.payroll.model.OrderBase;
 import com.example.payroll.model.Status;
-import com.example.payroll.repository.OrderRepository;
+import com.example.payroll.service.OrderService;
+import com.example.payroll.service.dto.OrderDisplayDTO;
+import com.example.payroll.service.dto.OrderUpdateDTO;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.IanaLinkRelations;
@@ -19,18 +22,18 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RequestMapping("/orders")
 public class OrderController {
 
-    private final OrderRepository repository;
+    private final OrderService service;
 
     private final OrderModelAssembler assembler;
 
-    public OrderController(OrderRepository repository, OrderModelAssembler assembler) {
-        this.repository = repository;
+    public OrderController(OrderService service, OrderModelAssembler assembler) {
+        this.service = service;
         this.assembler = assembler;
     }
 
     @GetMapping
-    CollectionModel<EntityModel<Order>> all() {
-        var orders = repository.findAll()
+    CollectionModel<EntityModel<OrderDisplayDTO>> all() {
+        var orders = service.findAll()
                 .stream().map(assembler::toModel).toList();
         return CollectionModel.of(
                 orders,
@@ -39,33 +42,34 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    EntityModel<Order> one(@PathVariable Long id) {
-        return repository.findById(id)
+    EntityModel<OrderDisplayDTO> one(@PathVariable OrderBase.CustomerOrder id) {
+        return service.findById(id)
                 .map(assembler::toModel)
                 .orElseThrow(() -> new OrderNotFoundException(id));
     }
 
     @PostMapping
-    ResponseEntity<EntityModel<Order>> newOrder(@RequestBody Order order) {
-        order.setStatus(Status.IN_PROGRESS);
+    ResponseEntity<EntityModel<OrderDisplayDTO>> newOrder(@RequestBody OrderUpdateDTO orderUpdate) {
+        Order order = service.createNewOrder(orderUpdate);
         // var newOrder = repository.save(order);
         // return ResponseEntity
         //         .created(linkTo(methodOn(OrderController.class).one(newOrder.getId())).toUri())
         //         .body(assembler.toModel(newOrder));
-        var em = assembler.toModel(repository.save(order));
+        var em = assembler.toModel(service.save(order));
         return ResponseEntity
                 .created(em.getRequiredLink(IanaLinkRelations.SELF).toUri())
                 .body(em);
     }
 
 
+    // TODO: Transferring more logic of saving and updating or deleting to the service
     @PutMapping("/{id}/complete")
-    ResponseEntity<?> complete(@PathVariable Long id) {
-        var order = repository.findById(id).orElseThrow(()
+    ResponseEntity<?> complete(@PathVariable OrderBase.CustomerOrder id) {
+        var order = service.findById(id).orElseThrow(()
                 -> new OrderNotFoundException(id));
         if (order.getStatus() == Status.IN_PROGRESS) {
             order.setStatus(Status.COMPLETED);
-            return ResponseEntity.ok(assembler.toModel(repository.save(order)));
+            return ResponseEntity.ok(assembler.toModel(service.save(service.fromUpdateDTO(order))));
         }
 
         return ResponseEntity
@@ -78,12 +82,12 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}/cancel")
-    ResponseEntity<?> cancel(@PathVariable Long id) {
-        var order = repository.findById(id).orElseThrow(()
+    ResponseEntity<?> cancel(@PathVariable OrderBase.CustomerOrder id) {
+        var order = service.findById(id).orElseThrow(()
                 -> new OrderNotFoundException(id));
         if (order.getStatus() == Status.IN_PROGRESS) {
             order.setStatus(Status.CANCELLED);
-            return ResponseEntity.ok(assembler.toModel(repository.save(order)));
+            return ResponseEntity.ok(assembler.toModel(service.save(order)));
         }
 
         // return ResponseEntity

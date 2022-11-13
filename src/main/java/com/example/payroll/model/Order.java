@@ -1,9 +1,9 @@
 package com.example.payroll.model;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,17 +11,20 @@ import lombok.NoArgsConstructor;
 @Table(name = "CUSTOMER_ORDER")
 @Data
 @NoArgsConstructor
-public class Order {
-    @Id
-    @GeneratedValue
-    private Long id;
+@AllArgsConstructor
+@Builder
+public class Order extends OrderBase {
 
     private String description;
-
     private Status status;
 
-    public Order(String description, Status status) {
-        this.description = description;
-        this.status = status;
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }
