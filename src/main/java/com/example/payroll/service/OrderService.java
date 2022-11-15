@@ -10,20 +10,17 @@ import java.util.Optional;
 
 public interface OrderService {
 
-    Order createNewOrder(OrderUpdateDTO updateDTO);
+    OrderDisplayDTO createOrder(OrderUpdateDTO updateDTO);
 
-    List<OrderDisplayDTO> findAll();
+    Optional<OrderDisplayDTO> updateOrder(OrderUpdateDTO updateDTO);
 
-    Optional<OrderDisplayDTO> findById(OrderBase.CustomerOrder id);
+    List<Order> findAll();
 
-    Order fromUpdateDTO(OrderUpdateDTO updateDTO);
+    Optional<Order> findById(OrderBase.CustomerOrder id);
+
+    Optional<Order> fromUpdateDTO(OrderUpdateDTO updateDTO);
 
     OrderDisplayDTO toDisplayDTO(Order order);
 
     OrderDisplayDTO save(Order order);
-
-    List<OrderDisplayDTO> saveAll(List<Order> orders);
-
-    Optional<OrderDisplayDTO> findByNaturalKey(OrderBase.CustomerOrder customerOrder);
-
 }

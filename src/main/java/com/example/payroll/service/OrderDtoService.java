@@ -21,25 +21,48 @@ public class OrderDtoService implements OrderService {
     }
 
     @Override
-    public Order createNewOrder(OrderUpdateDTO updateDTO) {
-        Order order = fromUpdateDTO(updateDTO);
-        order.setStatus(Status.IN_PROGRESS);
-        return order;
+    public OrderDisplayDTO createOrder(OrderUpdateDTO updateDTO) {
+        Optional<Order> res = fromUpdateDTO(updateDTO);
+        if (res.isEmpty()) {
+            Order savedOrder = repository.save(Order.builder()
+                    .description(updateDTO.getDescription())
+                    .status(Status.IN_PROGRESS)
+                    .build());
+            return toDisplayDTO(savedOrder);
+        }
+        return updateOrder(updateDTO)
+                .orElseThrow();
     }
 
     @Override
-    public List<OrderDisplayDTO> findAll() {
-        return repository.findAll().stream().map(this::toDisplayDTO).toList();
+    public Optional<OrderDisplayDTO> updateOrder(OrderUpdateDTO updateDTO) {
+        Optional<Order> res = repository.findById(updateDTO.getCustomerOrderId());
+        if (res.isEmpty()) {
+            return Optional.empty();
+        }
+        Order order = res.get();
+        order.setDescription(updateDTO.getDescription());
+        Order updatedOrder = repository.save(order);
+        return Optional.of(toDisplayDTO(updatedOrder));
     }
 
     @Override
-    public Optional<OrderDisplayDTO> findById(OrderBase.CustomerOrder id) {
-        return repository.findById(id).map(this::toDisplayDTO);
+    public List<Order> findAll() {
+        return repository.findAll();
     }
 
     @Override
-    public Order fromUpdateDTO(OrderUpdateDTO updateDTO) {
-        return OrderToAndFromDtoMapper.INSTANCE.fromUpdateDto(updateDTO);
+    public Optional<Order> findById(OrderBase.CustomerOrder id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    public Optional<Order> fromUpdateDTO(OrderUpdateDTO updateDTO) {
+        return repository.findById(updateDTO.getCustomerOrderId())
+                .map(order -> {
+                    order.setDescription(updateDTO.getDescription());
+                    return order;
+                });
     }
 
     @Override
@@ -49,17 +72,8 @@ public class OrderDtoService implements OrderService {
 
     @Override
     public OrderDisplayDTO save(Order order) {
-        return toDisplayDTO(repository.save(order));
-    }
-
-    @Override
-    public List<OrderDisplayDTO> saveAll(List<Order> orders) {
-        List<Order> savedOrders = repository.saveAll(orders);
-        return savedOrders.stream().map(this::toDisplayDTO).toList();
-    }
-
-    @Override
-    public Optional<OrderDisplayDTO> findByNaturalKey(OrderBase.CustomerOrder customerOrder) {
-        return repository.findById(customerOrder).map(this::toDisplayDTO);
+        return toDisplayDTO(
+                repository.save(order)
+        );
     }
 }

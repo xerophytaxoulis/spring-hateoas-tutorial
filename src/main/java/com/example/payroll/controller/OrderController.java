@@ -1,7 +1,6 @@
 package com.example.payroll.controller;
 
 import com.example.payroll.exception.OrderNotFoundException;
-import com.example.payroll.model.Order;
 import com.example.payroll.model.OrderBase;
 import com.example.payroll.model.Status;
 import com.example.payroll.service.OrderService;
@@ -34,7 +33,9 @@ public class OrderController {
     @GetMapping
     CollectionModel<EntityModel<OrderDisplayDTO>> all() {
         var orders = service.findAll()
-                .stream().map(assembler::toModel).toList();
+                .stream()
+                .map(service::toDisplayDTO)
+                .map(assembler::toModel).toList();
         return CollectionModel.of(
                 orders,
                 linkTo(methodOn(OrderController.class).all()).withSelfRel()
@@ -44,32 +45,31 @@ public class OrderController {
     @GetMapping("/{id}")
     EntityModel<OrderDisplayDTO> one(@PathVariable OrderBase.CustomerOrder id) {
         return service.findById(id)
+                .map(service::toDisplayDTO)
                 .map(assembler::toModel)
                 .orElseThrow(() -> new OrderNotFoundException(id));
     }
 
     @PostMapping
     ResponseEntity<EntityModel<OrderDisplayDTO>> newOrder(@RequestBody OrderUpdateDTO orderUpdate) {
-        Order order = service.createNewOrder(orderUpdate);
+        var order = service.createOrder(orderUpdate);
         // var newOrder = repository.save(order);
         // return ResponseEntity
         //         .created(linkTo(methodOn(OrderController.class).one(newOrder.getId())).toUri())
         //         .body(assembler.toModel(newOrder));
-        var em = assembler.toModel(service.save(order));
+        var em = assembler.toModel(order);
         return ResponseEntity
                 .created(em.getRequiredLink(IanaLinkRelations.SELF).toUri())
                 .body(em);
     }
 
-
-    // TODO: Transferring more logic of saving and updating or deleting to the service
     @PutMapping("/{id}/complete")
     ResponseEntity<?> complete(@PathVariable OrderBase.CustomerOrder id) {
         var order = service.findById(id).orElseThrow(()
                 -> new OrderNotFoundException(id));
         if (order.getStatus() == Status.IN_PROGRESS) {
             order.setStatus(Status.COMPLETED);
-            return ResponseEntity.ok(assembler.toModel(service.save(service.fromUpdateDTO(order))));
+            return ResponseEntity.ok(assembler.toModel(service.save(order)));
         }
 
         return ResponseEntity
